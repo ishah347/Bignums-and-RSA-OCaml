@@ -30,30 +30,56 @@ Problem 1: Negation
 ......................................................................*)
   
 let negate (b : bignum) : bignum =
-  failwith "negate not implemented" ;;
+  match b with
+  | {neg = false; coeffs = []} -> b
+  | {neg = x; coeffs = y} -> {neg = not x; coeffs = y} ;;
 
 (*......................................................................
 Problem 2: Comparing bignums
 ......................................................................*)  
-  
+
 let equal (b1 : bignum) (b2 : bignum) : bool =
-  failwith "equal not implemented" ;;
+  b1 = b2 ;;
 
 let less (b1 : bignum) (b2 : bignum) : bool =
-  failwith "less not implemented" ;;
+  let nonneg_comparer lst1 lst2 =
+  if List.compare_lengths lst1 lst2 = -1 then true 
+  else if List.compare_lengths lst1 lst2 = 1 then false 
+  else lst1 < lst2 in 
+  match b1.neg, b2.neg with
+  | false, true -> false
+  | true, false -> true
+  | false, false ->
+      nonneg_comparer b1.coeffs b2.coeffs 
+  | true, true ->
+      not ((nonneg_comparer b1.coeffs b2.coeffs) || (equal b1 b2)) ;; 
 
 let greater (b1 : bignum) (b2 : bignum) : bool =
-  failwith "greater not implemented" ;;
+  less b2 b1 ;;
 
 (*......................................................................
 Problem 3: Converting to and from bignums
 ......................................................................*)
 
 let from_int (n : int) : bignum =
-  failwith "from_int not implemented" ;;
+  let rec lister lst i =
+  if i < cBASE then i :: lst
+  else lister ((i mod cBASE) :: lst) (i / cBASE) in 
+  if n = 0 then {neg = false; coeffs = []}
+  else if n = min_int then 
+    {neg = true; coeffs = [4; 611; 686; 18; 427; 387; 904]} 
+  else if n < 0 then {neg = true; coeffs = lister [] (- n)}
+  else {neg = false; coeffs = lister [] n} ;;
 
 let to_int (b : bignum) : int option =
-  failwith "to_int not implemented" ;;
+  let rec converter i lst =
+  match List.rev lst with
+  | [] -> 0
+  | hd :: tl -> hd * i + converter (i * cBASE) (List.rev tl) in
+  if ((greater b (from_int max_int)) || (less b (from_int min_int))) then None 
+  else match b with
+  | {neg = false; coeffs = co_lst} -> Some (converter 1 co_lst)
+  | {neg = true; coeffs = co_lst} -> Some (converter (-1) co_lst) ;;
 
 (*......................................................................
 Helpful functions (not to be used in problems 1 to 3)
@@ -209,7 +235,11 @@ your implementation preserves the bignum invariant.
 ......................................................................*)
 
 let plus (b1 : bignum) (b2 : bignum) : bignum =
-  failwith "plus not implemented" ;;
+  let switch = ((b1.neg = true && b2.neg = true) || 
+                (b1.neg = true && greater (negate b1) b2) || 
+                (b2.neg = true && less b1 (negate b2))) in
+  if switch then (negate (plus_pos (negate b1) (negate b2)))
+  else plus_pos b1 b2 ;;
 
 (*......................................................................
 Problem 5
@@ -236,7 +266,24 @@ simplifies the code, as long as the invariant is preserved.
 ......................................................................*)
 
 let times (b1 : bignum) (b2 : bignum) : bignum =
-  failwith "times not implemented" ;;
+  let rec helper lst n carry = 
+  match lst with
+  | [] -> if carry > 0 then [carry] else []
+  | hd :: tl -> 
+      let fullprod = hd * n + carry in
+      (fullprod mod cBASE) :: (helper tl n (fullprod / cBASE)) in
+  let rec add_zero numeral mult_list = 
+      if numeral > 0 then add_zero (numeral - 1) (0 :: mult_list)
+      else (List.rev mult_list) in     
+  let rec multiplication num lst1 lst2 =
+  match List.rev lst1, List.rev lst2 with
+  | [], _ -> from_int 0
+  | _, [] -> from_int 0
+  | (h1 :: t1), y -> 
+      let new_lst = add_zero num (helper y h1 0) in
+      plus {neg = false; coeffs = new_lst} (multiplication (num + 1) t1 y) in 
+  if b1.neg = b2.neg then multiplication 0 b1.coeffs b2.coeffs
+  else negate (multiplication 0 b1.coeffs b2.coeffs) ;;
 
 (*======================================================================
 Section 2: Challenge Problem - RSA Cryptosystem
@@ -468,4 +515,4 @@ about your responses and will use them to help guide us in creating
 future assignments.
 ......................................................................*)
 
-let minutes_spent_on_pset () : int = failwith "not provided" ;;
+let minutes_spent_on_pset () : int = 600 ;;
