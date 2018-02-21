@@ -76,7 +76,7 @@ let to_int (b : bignum) : int option =
   match List.rev lst with
   | [] -> 0
   | hd :: tl -> hd * i + converter (i * cBASE) (List.rev tl) in
-  if ((greater b (from_int max_int)) || (less b (from_int min_int))) then None 
+  if ((greater b (from_int max_int)) || (less b (from_int min_int))) then None
   else match b with
   | {neg = false; coeffs = co_lst} -> Some (converter 1 co_lst)
   | {neg = true; coeffs = co_lst} -> Some (converter (-1) co_lst) ;;
@@ -156,7 +156,7 @@ let from_string (s : string) : bignum =
         {neg = true; coeffs = (List.rev (from_string_rec (List.rev t)))}
       else {neg = false;
             coeffs =
-              (strip_zeroes (List.rev (from_string_rec (List.rev (h :: t)))))}
+            (strip_zeroes (List.rev (from_string_rec (List.rev (h :: t)))))};;
 
 (* to_string -- Converts a bignum to its string representation.
    Returns a string beginning with ~ for negative integers. Assumes
