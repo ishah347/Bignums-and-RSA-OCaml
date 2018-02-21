@@ -42,7 +42,7 @@ let equal (b1 : bignum) (b2 : bignum) : bool =
   b1 = b2 ;;
 
 let less (b1 : bignum) (b2 : bignum) : bool =
-  let nonneg_comparer lst1 lst2 =
+  let list_comparer lst1 lst2 =
   if List.compare_lengths lst1 lst2 = -1 then true 
   else if List.compare_lengths lst1 lst2 = 1 then false 
   else lst1 < lst2 in 
@@ -50,9 +50,9 @@ let less (b1 : bignum) (b2 : bignum) : bool =
   | false, true -> false
   | true, false -> true
   | false, false ->
-      nonneg_comparer b1.coeffs b2.coeffs 
+      list_comparer b1.coeffs b2.coeffs 
   | true, true ->
-      not ((nonneg_comparer b1.coeffs b2.coeffs) || (equal b1 b2)) ;; 
+      not ((list_comparer b1.coeffs b2.coeffs) || (equal b1 b2)) ;; 
 
 let greater (b1 : bignum) (b2 : bignum) : bool =
   less b2 b1 ;;
@@ -72,14 +72,14 @@ let from_int (n : int) : bignum =
   else {neg = false; coeffs = lister [] n} ;;
 
 let to_int (b : bignum) : int option =
-  let rec converter i lst =
+  let rec list_convert i lst =
   match List.rev lst with
   | [] -> 0
-  | hd :: tl -> hd * i + converter (i * cBASE) (List.rev tl) in
+  | hd :: tl -> hd * i + list_convert (i * cBASE) (List.rev tl) in
   if ((greater b (from_int max_int)) || (less b (from_int min_int))) then None
-  else match b with
-  | {neg = false; coeffs = co_lst} -> Some (converter 1 co_lst)
-  | {neg = true; coeffs = co_lst} -> Some (converter (-1) co_lst) ;;
+  else match b.neg with
+  | false -> Some (list_convert 1 b.coeffs)
+  | true -> Some (list_convert (-1) b.coeffs) ;;
 
 (*......................................................................
 Helpful functions (not to be used in problems 1 to 3)
@@ -154,9 +154,10 @@ let from_string (s : string) : bignum =
   | h :: t ->
       if h = '-' || h = '~' then
         {neg = true; coeffs = (List.rev (from_string_rec (List.rev t)))}
-      else {neg = false;
-            coeffs =
-            (strip_zeroes (List.rev (from_string_rec (List.rev (h :: t)))))};;
+      else 
+        {neg = false;
+         coeffs =
+           (strip_zeroes (List.rev (from_string_rec (List.rev (h :: t)))))};;
 
 (* to_string -- Converts a bignum to its string representation.
    Returns a string beginning with ~ for negative integers. Assumes
@@ -266,24 +267,24 @@ simplifies the code, as long as the invariant is preserved.
 ......................................................................*)
 
 let times (b1 : bignum) (b2 : bignum) : bignum =
-  let rec helper lst n carry = 
+  let rec list_by_int lst n carry = 
   match lst with
-  | [] -> if carry > 0 then [carry] else []
+  | [] -> [carry]
   | hd :: tl -> 
-      let fullprod = hd * n + carry in
-      (fullprod mod cBASE) :: (helper tl n (fullprod / cBASE)) in
-  let rec add_zero numeral mult_list = 
-      if numeral > 0 then add_zero (numeral - 1) (0 :: mult_list)
+      let full_prod = hd * n + carry in
+      (full_prod mod cBASE) :: (list_by_int tl n (full_prod / cBASE)) in
+  let rec add_zero i mult_list = 
+      if i > 0 then add_zero (i - 1) (0 :: mult_list)
       else (List.rev mult_list) in     
-  let rec multiplication num lst1 lst2 =
+  let rec list_by_list num lst1 lst2 =
   match List.rev lst1, List.rev lst2 with
   | [], _ -> from_int 0
   | _, [] -> from_int 0
   | (h1 :: t1), y -> 
-      let new_lst = add_zero num (helper y h1 0) in
-      plus {neg = false; coeffs = new_lst} (multiplication (num + 1) t1 y) in 
-  if b1.neg = b2.neg then multiplication 0 b1.coeffs b2.coeffs
-  else negate (multiplication 0 b1.coeffs b2.coeffs) ;;
+      let new_lst = add_zero num (list_by_int y h1 0) in
+      plus {neg = false; coeffs = new_lst} (list_by_list (num + 1) t1 y) in 
+  if b1.neg = b2.neg then clean (list_by_list 0 b1.coeffs b2.coeffs)
+  else negate (clean (list_by_list 0 b1.coeffs b2.coeffs)) ;;
 
 (*======================================================================
 Section 2: Challenge Problem - RSA Cryptosystem
