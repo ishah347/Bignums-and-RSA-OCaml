@@ -154,8 +154,7 @@ let from_string (s : string) : bignum =
   | h :: t ->
       if h = '-' || h = '~' then
         {neg = true; coeffs = (List.rev (from_string_rec (List.rev t)))}
-      else 
-        {neg = false;
+      else {neg = false;
          coeffs =
            (strip_zeroes (List.rev (from_string_rec (List.rev (h :: t)))))};;
 
