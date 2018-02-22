@@ -155,8 +155,8 @@ let from_string (s : string) : bignum =
       if h = '-' || h = '~' then
         {neg = true; coeffs = (List.rev (from_string_rec (List.rev t)))}
       else {neg = false;
-         coeffs =
-           (strip_zeroes (List.rev (from_string_rec (List.rev (h :: t)))))};;
+             coeffs =
+            (strip_zeroes (List.rev (from_string_rec (List.rev (h :: t)))))};;
 
 (* to_string -- Converts a bignum to its string representation.
    Returns a string beginning with ~ for negative integers. Assumes
